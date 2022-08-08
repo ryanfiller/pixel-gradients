@@ -24,17 +24,20 @@
 		selected.push(Array(difference).fill(false))
 	}
 
-	$: CSS = `
-	no-repeat linear-gradient(var(--foreground), var(--foreground)) calc(0 * var(--pixelSize)) calc(0 * var(--pixelSize)) / var(--pixelSize) var(--pixelSize),
-	no-repeat linear-gradient(var(--foreground), var(--foreground)) calc(1 * var(--pixelSize)) calc(1 * var(--pixelSize)) / var(--pixelSize) var(--pixelSize),
-	no-repeat linear-gradient(var(--foreground), var(--foreground)) calc(4 * var(--pixelSize)) calc(0 * var(--pixelSize)) / var(--pixelSize) var(--pixelSize),
-	no-repeat linear-gradient(var(--foreground), var(--foreground)) calc(3 * var(--pixelSize)) calc(1 * var(--pixelSize)) / var(--pixelSize) var(--pixelSize),
-	no-repeat linear-gradient(var(--foreground), var(--foreground)) calc(2 * var(--pixelSize)) calc(2 * var(--pixelSize)) / var(--pixelSize) var(--pixelSize),
-	no-repeat linear-gradient(var(--foreground), var(--foreground)) calc(1 * var(--pixelSize)) calc(3 * var(--pixelSize)) / var(--pixelSize) var(--pixelSize),
-	no-repeat linear-gradient(var(--foreground), var(--foreground)) calc(0 * var(--pixelSize)) calc(4 * var(--pixelSize)) / var(--pixelSize) var(--pixelSize),
-	no-repeat linear-gradient(var(--foreground), var(--foreground)) calc(3 * var(--pixelSize)) calc(3 * var(--pixelSize)) / var(--pixelSize) var(--pixelSize),
-	no-repeat linear-gradient(var(--foreground), var(--foreground)) calc(4 * var(--pixelSize)) calc(4 * var(--pixelSize)) / var(--pixelSize) var(--pixelSize)
-`
+	/* <image>  <position> / <size> */
+	/* graident x y       / height width */
+	$: CSS = shownGrid.map((row, rIndex) => {
+		return row.map((_, cIndex) => {
+			if (selected[rIndex][cIndex]) {
+				return `no-repeat linear-gradient(var(--foreground), var(--foreground)) calc(${rIndex} * var(--pixelSize)) calc(${cIndex} * var(--pixelSize)) / var(--pixelSize) var(--pixelSize)`
+			} else {
+				return 'SKIP'
+			}
+		})
+	})
+		.flat() // make this one array, [], instead of a nested one, [[], [], ...]
+		.filter(value => !(value === 'SKIP')) // get rid of the blank declarations
+		.join(', \n \t') //make it look like CSS
 
 	// sync up with the CSS
 	$: hasWindow && (
@@ -82,17 +85,17 @@
 
 		<section class='checkboxes'>
 			<table>
-				{#each shownGrid as row, rowIndex}
+				{#each shownGrid as row, rIndex}
 					<tr>
-						{#each row as _column, columnIndex}
+						{#each row as _column, cIndex}
 							<td>
 								<input
 									type='checkbox'
-									id={`${rowIndex}-${columnIndex}`}
-									bind:checked={selected[rowIndex][columnIndex]}
+									id={`${rIndex}-${cIndex}`}
+									bind:checked={selected[rIndex][cIndex]}
 									>
 								<label
-									for={`${rowIndex}-${columnIndex}`}
+									for={`${rIndex}-${cIndex}`}
 								/>
 							</td>
 						{/each}
@@ -105,8 +108,11 @@
 			<div style={`background: var(--${name}); width: calc(${columns} * var(--pixelSize)); height: calc(${rows} * var(--pixelSize));`}/>
 		</section>
 
+	<!-- formatting tabs in code with html is hard... -->
 		<section class='code'>
-			<pre><code>--{name}: {CSS};</code></pre>
+			<pre><code>--{name}:
+	{CSS}
+;</code></pre>
 		</section>
 	{/if}
 </main>
