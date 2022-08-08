@@ -1,21 +1,34 @@
 <script>
 	let hasWindow = typeof window !== 'undefined'
 
-	let name = 'pixel-gradient'
-	let pixelSize = '0.25rem'
-	let foreground = '#00FF00' // lime
-	let background = '#191970' // midnightblue
+	function tryLocalStorage(key = '') {
+		const needsParsing = ['pixelSize', 'rows', 'columns', 'selected']
+		if (hasWindow && window.localStorage.getItem(key)) {
+			if (needsParsing.includes(key)) {
+				return JSON.parse(window.localStorage.getItem(key))
+			} else {
+				return window.localStorage.getItem(key)
+			}
+		}
+	}
 
-	let rows = 5
-	let columns = 5
+	let name = tryLocalStorage('name') || 'pixel-gradient'
+	let pixelSize = tryLocalStorage('pixelSize') || 0.25
+	let foreground = tryLocalStorage('foreground') || '#00FF00' // lime
+	let background = tryLocalStorage('background') || '#191970' // midnightblue
 
-	$: selected = [
+	let rows = tryLocalStorage('rows') || 5
+	let columns = tryLocalStorage('columns') || 5
+
+	const x = [
 		[true,  false, false, false, true ],
 		[false, true,  false, true,  false],
 		[false, false, true,  false, false],
 		[false, true,  false, true,  false],
 		[true,  false, false, false, true ]
 	]
+
+	$: selected = tryLocalStorage('selected') || x
 
 	$: shownGrid = Array(rows).fill(Array(columns).fill(false))
 	// keep the checkbox from exploding when rows index is undfined
@@ -29,7 +42,7 @@
 	$: CSS = shownGrid.map((row, rIndex) => {
 		return row.map((_, cIndex) => {
 			if (selected[rIndex][cIndex]) {
-				return `no-repeat linear-gradient(var(--foreground), var(--foreground)) calc(${rIndex} * var(--pixelSize)) calc(${cIndex} * var(--pixelSize)) / var(--pixelSize) var(--pixelSize)`
+				return `no-repeat linear-gradient(var(--foreground), var(--foreground)) calc(${cIndex} * var(--pixelSize)) calc(${rIndex} * var(--pixelSize)) / var(--pixelSize) var(--pixelSize)`
 			} else {
 				return 'SKIP'
 			}
@@ -43,8 +56,19 @@
 	$: hasWindow && (
 		document.documentElement.style.setProperty('--foreground', foreground),
 		document.documentElement.style.setProperty('--background', background),
-		document.documentElement.style.setProperty('--pixelSize', pixelSize),
+		document.documentElement.style.setProperty('--pixelSize', `${pixelSize}rem`),
 		document.documentElement.style.setProperty(`--${name}`, CSS)
+	)
+
+	// sync up with localStorage
+	$: hasWindow && (
+		window.localStorage.setItem('name', name),
+		window.localStorage.setItem('pixelSize', JSON.stringify(pixelSize)),
+		window.localStorage.setItem('foreground', foreground),
+		window.localStorage.setItem('background', background),
+		window.localStorage.setItem('rows', JSON.stringify(rows)),
+		window.localStorage.setItem('columns', JSON.stringify(columns)),
+		window.localStorage.setItem('selected', JSON.stringify(selected))
 	)
 </script>
 
@@ -78,8 +102,8 @@
 				<input type='color' id='background' bind:value={background} />
 			</label>
 			<label for='pixelsize'>
-				<span>pixel size: </span>
-				<input type='text' id='pixelsize' bind:value={pixelSize} />
+				<span>pixel size: {pixelSize}rem</span>
+				<input type='range' min='0.25' max='5' step='0.25' id='pixelsize' bind:value={pixelSize} />
 			</label>
 		</fieldset>
 
