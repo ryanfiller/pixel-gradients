@@ -117,7 +117,7 @@
 									type='checkbox'
 									id={`${rIndex}-${cIndex}`}
 									bind:checked={selected[rIndex][cIndex]}
-									>
+								/>
 								<label
 									for={`${rIndex}-${cIndex}`}
 								/>
@@ -235,6 +235,8 @@
 	input[type='color'] {
 		padding: 0;
 		height: 2.5em;
+		width: 100%;
+		border-radius: 0;
 	}
 
 	section {
@@ -262,6 +264,8 @@
 		visibility: hidden;
 		position: absolute;
 		pointer-events: none;
+		height: 0;
+		width: 0;
 	}
 
 	table label {
@@ -278,6 +282,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		padding: 1rem;
+		min-height: 25vh;
 	}
 
 	section.code {
