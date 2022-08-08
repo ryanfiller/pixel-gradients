@@ -2,16 +2,46 @@
 	let hasWindow = typeof window !== 'undefined'
 
 	let name = 'pixel-gradient'
-	let rows = 5
-	let columns = 5
+	let pixelSize = '0.25rem'
 	let foreground = '#00FF00' // lime
 	let background = '#191970' // midnightblue
 
-	$: (
-		hasWindow && (
-			document.documentElement.style.setProperty('--foreground', foreground),
-			document.documentElement.style.setProperty('--background', background)
-		)
+	let rows = 5
+	let columns = 5
+
+	$: selected = [
+		[true,  false, false, false, true ],
+		[false, true,  false, true,  false],
+		[false, false, true,  false, false],
+		[false, true,  false, true,  false],
+		[true,  false, false, false, true ]
+	]
+
+	$: shownGrid = Array(rows).fill(Array(columns).fill(false))
+	// keep the checkbox from exploding when rows index is undfined
+	$: if (rows > selected.length) {
+		const difference = rows - selected.length
+		selected.push(Array(difference).fill(false))
+	}
+
+	$: CSS = `
+	no-repeat linear-gradient(var(--foreground), var(--foreground)) calc(0 * var(--pixelSize)) calc(0 * var(--pixelSize)) / var(--pixelSize) var(--pixelSize),
+	no-repeat linear-gradient(var(--foreground), var(--foreground)) calc(1 * var(--pixelSize)) calc(1 * var(--pixelSize)) / var(--pixelSize) var(--pixelSize),
+	no-repeat linear-gradient(var(--foreground), var(--foreground)) calc(4 * var(--pixelSize)) calc(0 * var(--pixelSize)) / var(--pixelSize) var(--pixelSize),
+	no-repeat linear-gradient(var(--foreground), var(--foreground)) calc(3 * var(--pixelSize)) calc(1 * var(--pixelSize)) / var(--pixelSize) var(--pixelSize),
+	no-repeat linear-gradient(var(--foreground), var(--foreground)) calc(2 * var(--pixelSize)) calc(2 * var(--pixelSize)) / var(--pixelSize) var(--pixelSize),
+	no-repeat linear-gradient(var(--foreground), var(--foreground)) calc(1 * var(--pixelSize)) calc(3 * var(--pixelSize)) / var(--pixelSize) var(--pixelSize),
+	no-repeat linear-gradient(var(--foreground), var(--foreground)) calc(0 * var(--pixelSize)) calc(4 * var(--pixelSize)) / var(--pixelSize) var(--pixelSize),
+	no-repeat linear-gradient(var(--foreground), var(--foreground)) calc(3 * var(--pixelSize)) calc(3 * var(--pixelSize)) / var(--pixelSize) var(--pixelSize),
+	no-repeat linear-gradient(var(--foreground), var(--foreground)) calc(4 * var(--pixelSize)) calc(4 * var(--pixelSize)) / var(--pixelSize) var(--pixelSize)
+`
+
+	// sync up with the CSS
+	$: hasWindow && (
+		document.documentElement.style.setProperty('--foreground', foreground),
+		document.documentElement.style.setProperty('--background', background),
+		document.documentElement.style.setProperty('--pixelSize', pixelSize),
+		document.documentElement.style.setProperty(`--${name}`, CSS)
 	)
 </script>
 
@@ -25,37 +55,58 @@
 	{#if hasWindow && !!window.localStorage}
 		<fieldset>
 			<label for='name'>
-				<span>name</span>
+				<span>name: </span>
 				<input type='text' id='name' bind:value={name} />
 			</label>
 			<label for='rows'>
-				<span>rows</span>
-				<input type='number' id='rows' bind:value={rows} />
+				<span>rows: </span>
+				<input type='number' min='0' id='rows' bind:value={rows} />
 			</label>
 			<label for='columns'>
-				<span>columns</span>
-				<input type='number' id='columns' bind:value={columns} />
+				<span>columns: </span>
+				<input type='number' min='0' id='columns' bind:value={columns} />
 			</label>
 			<label for='foreground'>
-				<span>foreground</span>
+				<span>foreground: </span>
 				<input type='color' id='foreground' bind:value={foreground} />
 			</label>
 			<label for='background'>
-				<span>background</span>
+				<span>background: </span>
 				<input type='color' id='background' bind:value={background} />
+			</label>
+			<label for='pixelsize'>
+				<span>pixel size: </span>
+				<input type='text' id='pixelsize' bind:value={pixelSize} />
 			</label>
 		</fieldset>
 
-		<section>
-			<article>
+		<section class='checkboxes'>
+			<table>
+				{#each shownGrid as row, rowIndex}
+					<tr>
+						{#each row as _column, columnIndex}
+							<td>
+								<input
+									type='checkbox'
+									id={`${rowIndex}-${columnIndex}`}
+									bind:checked={selected[rowIndex][columnIndex]}
+									>
+								<label
+									for={`${rowIndex}-${columnIndex}`}
+								/>
+							</td>
+						{/each}
+					</tr>
+				{/each}
+			</table>
+		</section>
 
-			</article>
-			<article>
+		<section class='output'>
+			<div style={`background: var(--${name}); width: calc(${columns} * var(--pixelSize)); height: calc(${rows} * var(--pixelSize));`}/>
+		</section>
 
-			</article>
-			<article>
-
-			</article>
+		<section class='code'>
+			<pre><code>--{name}: {CSS};</code></pre>
 		</section>
 	{/if}
 </main>
@@ -78,8 +129,6 @@
 <style>
 	:root {
 		--readable: 50rem;
-		--foreground: '';
-		--background: ''
 	}
 
 	:global(*) {
@@ -111,6 +160,7 @@
 
 	hr {
 		width: 100%;
+		margin: 1rem 0;
 	}
 
 	strong {
@@ -119,8 +169,9 @@
 
 	main {
 		flex: 1;
+		gap: 1rem;
 		display: flex;
-		flex-direction: column;
+		flex-wrap: wrap;
 	}
 
 	fieldset {
@@ -130,10 +181,12 @@
 		gap: 1rem;
 		padding: 1rem;
 		border: none;
+		width: 100%;
 	}
 
 	label {
 		flex: 1;
+		cursor: pointer;
 	}
 
 	label span {
@@ -143,6 +196,7 @@
 
 	input {
 		width: 100%;
+		cursor: pointer;
 		min-width: 10em;
 		padding: .5em;
 		border-style: solid;
@@ -151,6 +205,59 @@
 	input[type='color'] {
 		padding: 0;
 		height: 2.5em;
+	}
+
+	section {
+		border: 1px solid var(--foreground);
+	}
+
+	section.checkboxes,
+	section.output {
+		flex: 1;
+		min-width: 20rem;
+	}
+
+	table {
+		width: 100%;
+		border-collapse: collapse;
+		cellspacing: 0;
+		cellpadding: 0;
+	}
+
+	tr, td {
+		border: 1px solid var(--foreground);
+	}
+
+	table input[type='checkbox'] {
+		visibility: hidden;
+		position: absolute;
+		pointer-events: none;
+	}
+
+	table label {
+		display: block;
+		background: var(--background);
+		aspect-ratio: 1 / 1;
+	}
+
+	table input[type='checkbox']:checked + label {
+		background: var(--foreground);
+	}
+
+	section.output {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	section.code {
+		flex: 1;
+		min-width: 100%;
+	}
+
+	pre {
+		overflow: auto;
+		padding: 1rem;
 	}
 
 	footer {
