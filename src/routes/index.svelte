@@ -34,7 +34,8 @@
 	// keep the checkbox from exploding when rows index is undfined
 	$: if (rows > selected.length) {
 		const difference = rows - selected.length
-		selected.push(Array(difference).fill(false))
+		// must reassign for Svelte to see this, can't just .push to selected
+		selected = [...selected, ...Array(difference).fill(false)]
 	}
 
 	/* <image>  <position> / <size> */
