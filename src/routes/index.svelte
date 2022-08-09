@@ -29,15 +29,19 @@
 	]
 
 	$: selected = tryLocalStorage('selected') || x
+	$: grid = Array(rows).fill(Array(columns).fill(false))
 
 	// keep the checkbox from exploding when rows index is undfined
 	$: if (rows > selected.length) {
 		const rowDifference = rows - selected.length
-		// must reassign for Svelte to see this, can't just .push to selected
-		selected = [...selected, ...Array(rowDifference).fill(Array(columns))]
-	}
+		const columnDifference = columns - selected[0].length
 
-	$: grid = Array(rows).fill(Array(columns).fill(false))
+		for (let i = 0; i < rowDifference; i++) {
+			selected.push(Array(columns).fill(false))
+		} 
+		// must reassign for Svelte to see this, can't just .push to selected
+		selected = selected
+	}
 
 	/* <image>  <position> / <size> */
 	/* graident x y       / height width */
