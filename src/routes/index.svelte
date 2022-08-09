@@ -30,17 +30,18 @@
 
 	$: selected = tryLocalStorage('selected') || x
 
-	$: shownGrid = Array(rows).fill(Array(columns).fill(false))
 	// keep the checkbox from exploding when rows index is undfined
 	$: if (rows > selected.length) {
-		const difference = rows - selected.length
+		const rowDifference = rows - selected.length
 		// must reassign for Svelte to see this, can't just .push to selected
-		selected = [...selected, ...Array(difference).fill(false)]
+		selected = [...selected, ...Array(rowDifference).fill(Array(columns))]
 	}
+
+	$: grid = Array(rows).fill(Array(columns).fill(false))
 
 	/* <image>  <position> / <size> */
 	/* graident x y       / height width */
-	$: CSS = shownGrid.map((row, rIndex) => {
+	$: CSS = grid.map((row, rIndex) => {
 		return row.map((_, cIndex) => {
 			if (selected[rIndex][cIndex]) {
 				return `no-repeat linear-gradient(var(--foreground), var(--foreground)) calc(${cIndex} * var(--pixelSize)) calc(${rIndex} * var(--pixelSize)) / var(--pixelSize) var(--pixelSize)`
@@ -110,7 +111,7 @@
 
 		<section class='checkboxes'>
 			<table>
-				{#each shownGrid as row, rIndex}
+				{#each grid as row, rIndex}
 					<tr>
 						{#each row as _column, cIndex}
 							<td>
